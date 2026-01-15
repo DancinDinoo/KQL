@@ -1,0 +1,19 @@
+// Designed to show you all rule runs within the designated time period showing:
+• Total rule runs
+• Total number runs with an alert generated
+• Total number of runs without an alert generated
+• Total number of runs that error
+• Calculates the % of rule runs that produce an alert
+
+
+let lookback = 7d; // Change as you need
+SentinelHealth
+| where TimeGenerated > ago(lookback)
+| where SentinelResourceType == "Analytics Rule"
+| summarize
+NoAlertGenerated = toint(countif(Reason == "The analytics rule executed successfully. The alert generation threshold was not reached.")),
+AlertGenerated = toint(countif(Reason == "The analytics rule was executed successfully.")),
+RuleError = toint(countif(Reason == "The analytics rule execution encountered an issue and could not be completed.")),
+TotalRuleExecutions = count() by SentinelResourceName
+| extend AlertsGeneratedPercentage = round((AlertGenerated * 100.0 / TotalRuleExecutions), 2)
+| sort by AlertsGeneratedPercentage
