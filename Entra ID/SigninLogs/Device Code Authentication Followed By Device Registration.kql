@@ -1,0 +1,19 @@
+  SigninLogs
+  | where ResultType == "0"
+  | where AppDisplayName == "Microsoft Authentication Broker"
+  | where AuthenticationProtocol == "deviceCode"
+  | where NetworkLocationDetails !has "trustedNamedLocation"
+  | summarize arg_max(SigninTime = TimeGenerated, *) by UserPrincipalName
+  | join kind=inner (AuditLogs
+  | extend Deviceregisterationtime = TimeGenerated
+  | where OperationName in ("Register device", "Add device")
+  | extend UserId = tostring(parse_json(tostring(InitiatedBy.user)).id)
+  | extend RegisteringIP = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)
+  ) on UserId
+  | extend DeviceOS = tostring(AdditionalDetails[3].value)
+  | extend DeviceID = tostring(AdditionalDetails[4].value)
+  | where SigninTime < Deviceregisterationtime
+
+// https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/
+// A TA may request refresh tokens to the Microsoft Authentication Broker app. This allows an attacker to then gain another token for the device registration service and register their own device to AAD. They can then gain a PRT and gain access to all organizational resources.
+// severity: High

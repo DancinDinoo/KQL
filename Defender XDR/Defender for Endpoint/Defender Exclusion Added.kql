@@ -1,0 +1,4 @@
+DeviceProcessEvents
+  | where FileName in ("powershell.exe", "pwsh.dll") and ProcessCommandLine has "Add-MpPreference"
+
+// Description: Detects where a new exclusion has been added to defender via powershell. These should be managed centrally and not been added onto local devices.

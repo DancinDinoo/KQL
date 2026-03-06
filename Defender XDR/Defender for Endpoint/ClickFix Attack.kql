@@ -1,0 +1,10 @@
+let suspiciousflags = pack_array("IWR", "IEX", "Captcha", "reCAPTCHA", "Robot", "Invoke", "Hidden");
+  DeviceRegistryEvents
+  | where ActionType == "RegistryValueSet"
+  | where RegistryKey endswith @"Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU"
+  | where RegistryValueName != "MRUList"
+  | where (RegistryValueData has "powershell" and RegistryValueData has_any(suspiciousflags) or RegistryValueData has "mshta")
+
+// Description:  ClickFix is a type of social engineering attack designed to present users with a somethings broken/capatcha message that requires them to copy a command without realising and paste this into the run box in windows.
+//  https://www.proofpoint.com/us/blog/threat-insight/security-brief-clickfix-social-engineering-technique-floods-threat-landscape
+//  https://www.hendryadrian.com/infostealer-malware-linked-to-lazarus-group-campaigns/

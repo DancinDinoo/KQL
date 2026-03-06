@@ -1,0 +1,9 @@
+  let highriskaccounts = pack_array(""); // AD Sync
+  SigninLogs
+  | where UserPrincipalName in~ (highriskaccounts)
+  | extend Browser = tostring(DeviceDetail.browser)
+  | extend DeviceId = tostring(DeviceDetail.deviceId)
+  | extend OS = tostring(DeviceDetail.operatingSystem)
+  | project CreatedDateTime, OperationName, ResultType, AppDisplayName, UserDisplayName, ResourceDisplayName, UserPrincipalName, Location, LocationDetails, IPAddress, UserAgent, DeviceId, Browser, OS
+
+  // This can be improved by using the BehaviourAnalytics table if available or searching for prefix on AD Sync accounts

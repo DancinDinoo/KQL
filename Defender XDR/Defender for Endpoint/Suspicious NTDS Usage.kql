@@ -1,0 +1,7 @@
+let Processes = pack_array('powershell','pwsh','cmd');
+DeviceProcessEvents
+| where InitiatingProcessParentFileName has_any (Processes)
+| where ProcessCommandLine contains "ntdsutil"
+| project TimeGenerated, DeviceName, AccountName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessParentFileName
+
+// NTDS is your AD goldmine, access to this basically means all your users can be considered compromised.

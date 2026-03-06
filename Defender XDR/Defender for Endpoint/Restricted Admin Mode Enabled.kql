@@ -1,0 +1,7 @@
+DeviceRegistryEvents
+  | where ActionType == "RegistryValueSet"
+  | where RegistryValueName == "DisableRestrictedAdmin" or InitiatingProcessCommandLine has "DisableRestrictedAdmin"
+  | where RegistryValueData == "0"
+
+// Description: Restricted admin mode is designed to prevent credential leakage when connecting to potentially compromised machines. However there is a risk of a Pass-the-hash attack if enabled.
+// https://thedfirreport.com/2024/02/26/seo-poisoning-to-domain-control-the-gootloader-saga-continues/

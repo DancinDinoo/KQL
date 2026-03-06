@@ -1,0 +1,11 @@
+let allowedparentprocesses = pack_array("");
+  let alloweddllfiles = pack_array("");
+  DeviceProcessEvents
+  | where FileName has_any ("rundll32.exe","regsvr32.exe")
+  | where InitiatingProcessFileName in~("wscript.exe","powershell.exe","cmd.exe","pwsh.exe","cscript.exe", "pwsh.dll")
+  | where not(InitiatingProcessParentFileName in~(allowedparentprocesses)
+  )
+  | project TimeGenerated, DeviceName, InitiatingProcessAccountName, InvestigatedProcessName=FileName, InvestigatedProcessCommandLine = ProcessCommandLine,InvestigatedProcessStartTime = ProcessCreationTime, InvestigatedProcessId = ProcessId, InitiatingProcessFileName, InitiatingProcessCommandLine, InitiatingProcessParentFileName
+
+// Description: Detects Regsvr32/Rundll32 being launched with a suspicious parent process like powershell.
+//  https://threathunt.blog/running-live-malware-for-threat-hunting-purposes/

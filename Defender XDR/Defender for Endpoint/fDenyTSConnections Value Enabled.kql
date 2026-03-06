@@ -1,0 +1,7 @@
+DeviceRegistryEvents
+  | where ActionType == "RegistryValueSet"
+  | where RegistryValueName == "fDenyTSConnections" or InitiatingProcessCommandLine has "fDenyTSConnections"
+  | where RegistryValueData == "0"
+
+// Description:   The fDenyTSConnections registry key enables RDP connections to a device. Manually enabling this setting on an endpoint can be an indication of a TA attempting to gain an interactive session.
+//  https://learn.microsoft.com/en-us/windows-hardware/customize/desktop/unattend/microsoft-windows-terminalservices-localsessionmanager-fdenytsconnections 

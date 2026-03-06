@@ -1,0 +1,6 @@
+  AuditLogs
+  | where OperationName == "User has elevated their access to User Access Administrator for their Azure Resources"
+  | extend InitiatedByUPN = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+  | extend InitiatedByIP = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)
+
+  // A Global Administrator can elevate their access to User Access Administrator at the root of an azure tenant allowing them to administer all resources. This should be a rare event and always time bound.

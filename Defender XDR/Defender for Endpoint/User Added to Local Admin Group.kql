@@ -1,0 +1,7 @@
+DeviceEvents
+  | where ActionType == 'UserAccountAddedToLocalGroup' 
+  | extend GroupSid = tostring(AdditionalFields.GroupSid) | where GroupSid == "S-1-5-32-544"
+  | where InitiatingProcessAccountName !contains DeviceName and InitiatingProcessAccountName !contains "$" // Local machine accounts
+  | project AccountAddedTime = TimeGenerated, AddedAccountSid = AccountSid, DeviceId, DeviceName, AddingAccount = InitiatingProcessAccountName, AddingAccountSid = InitiatingProcessAccountSid
+
+// Description: Detects a user being added to the local administrators group on a device

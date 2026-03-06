@@ -1,0 +1,21 @@
+let encodedcommandflags = pack_array("-encodedcommand", "-enc", "enco", "-e");
+  let globalallowedinitiatingprocesses = pack_array("Microsoft.Management.Services.CloudManagedDesktop.Agent.exe", "gc_worker.exe");
+  (union isfuzzy=true
+  (DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName =~ "PowerShell.EXE" or ProcessVersionInfoOriginalFileName == "pwsh.dll"
+  | where ProcessCommandLine has_any(encodedcommandflags)
+  | extend EncodedCommand = extract(@'\s+([A-Za-z0-9+/]{20}\S+$)', 1, ProcessCommandLine)
+  | extend DecodedCommand = base64_decode_tostring(EncodedCommand)
+  | where not(InitiatingProcessVersionInfoOriginalFileName in(globalallowedinitiatingprocesses) or InitiatingProcessFileName in (globalallowedinitiatingprocesses))
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where Process == "powershell.exe" or Process == "pwsh.dll"
+  | where CommandLine has_any (encodedcommandflags)
+  | extend EncodedCommand = extract(@'\s+([A-Za-z0-9+/]{20}\S+$)', 1, CommandLine)
+  | extend DecodedCommand = base64_decode_tostring(EncodedCommand)
+  | where not(ParentProcessName has_any(globalallowedinitiatingprocesses))
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine, EncodedCommand, DecodedCommand
+  ))
+
+// Description: Detects a PowerShell commandline using one of the encoded parameters

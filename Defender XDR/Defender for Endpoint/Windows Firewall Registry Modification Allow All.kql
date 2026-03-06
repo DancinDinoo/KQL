@@ -1,0 +1,11 @@
+let firewallRegistryList = dynamic([
+  'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\RestrictedServices\\Static\\System',
+  'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\RestrictedServices\\Configurable\\System',
+  'HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Defaults\\FirewallPolicy\\FirewallRules',
+  'HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall'
+  ]);
+  DeviceRegistryEvents
+  | where ActionType in ('RegistryValueSet', 'RegistryKeyCreated')
+  | where RegistryKey has_any (firewallRegistryList) and RegistryValueData has_all ('Action=Allow', 'Active=TRUE')
+
+// Description: A TA may adjust the settings on an endpoint to allow all firewall traffic outbound/inbound.

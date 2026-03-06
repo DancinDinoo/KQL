@@ -1,0 +1,8 @@
+SecurityEvent
+| where EventID == "4697"
+| extend ParsedParameters = parse_xml(EventData)
+| where ServiceStartType == "3" and ServiceFileName matches regex @"\%systemroot\%\\[A-Za-z]{8}\.exe" and ServiceName matches regex @"^[a-zA-z]{4}$"
+
+// Identifies known indicators of PsExec.py after execution
+// https://github.com/fortra/impacket/tree/master 
+// https://github.com/un33k/impacket/blob/master/examples/psexec.py

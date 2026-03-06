@@ -1,0 +1,17 @@
+let commandinterpreters = pack_array("powershell.exe", "pwsh.exe", "pwsh.dll", "mshta.exe", "wscript.exe", "cscript.exe");
+  let suspiciousvariables = pack_array(@"\PerfLogs\", @"\Users\Public", @"\AppData\Local\Temp", @"\AppData\Roaming\Temp", @"\Temporary Internet", @"Temp", "%TEMP%", "%TMP%", @"%LocalAppData%\Temp");
+  let allowedparentprocesses = pack_array("senseir.exe");
+  union isfuzzy = true (
+  DeviceProcessEvents
+  | where (FileName in~(commandinterpreters) and ProcessCommandLine has_any (suspiciousvariables) and not(ProcessCommandLine has_any (">", "Out-File", "ConvertTo-Json", @"-WindowStyle hidden -Verb runAs", "EC2-Windows"))) or (FileName == "cmd.exe" and ProcessCommandLine has_any(suspiciousvariables) and ProcessCommandLine has_any(".bat", ".cmd"))
+  | where InitiatingProcessFileName !in(allowedparentprocesses)
+  ),
+  (
+  SecurityEvent
+  | where EventID == "4688"
+  | where (Process in~(scriptinterpreters) and CommandLine has_any (suspiciousvariables) and not(CommandLine has_any (">", "Out-File", "ConvertTo-Json", @"-WindowStyle hidden -Verb runAs", "EC2-Windows"))) or (Process == "cmd.exe" and CommandLine has_any(suspiciousvariables) and CommandLine has_any(".bat", ".cmd"))
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  )
+
+// Description: Temporary directories are commonly used by attackers as staging grounds for malware.
+//  https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_susp_script_exec_from_temp.yml

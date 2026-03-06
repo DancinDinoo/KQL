@@ -1,0 +1,7 @@
+DeviceNetworkEvents
+| where InitiatingProcessCommandLine contains "certutil"
+| where RemoteIPType == "Public"
+| project TimeGenerated, DeviceName, InitiatingProcessAccountName, InitiatingProcessCommandLine, LocalIPType, LocalIP, RemoteIPType,RemoteIP, RemoteUrl, RemotePort
+
+// Description: Detects when certutil is used to make an external outbound connection as detailed here 
+// https://www.avira.com/en/blog/certutil-abused-by-attackers-to-spread-threats

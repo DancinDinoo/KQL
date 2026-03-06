@@ -1,0 +1,20 @@
+let ApprovedRMM = dynamic([""]); // Your approved RMM domains
+let RMMList = externaldata(URI: string, RMMTool: string)
+    [h'https://raw.githubusercontent.com/magicsword-io/LOLRMM/main/website/public/api/rmm_domains.csv'] with (format='csv', ignoreFirstRecord=true)
+| project URI;
+let CaptureGroups = RMMList // We need to process the * in the names and treat them differently than a straight match/deny
+| where URI contains "*"
+| extend URI = replace_string(URI, '*', '')
+| distinct URI;
+let literalmatches = RMMList // These are to be literally matched without wildcarding
+| where URI !contains "*"
+| distinct URI;
+DeviceNetworkEvents
+| where ActionType == @"ConnectionSuccess"
+| where RemoteUrl has_any(CaptureGroups) or RemoteUrl in~(literalmatches)
+| where not((RemoteUrl has_any(ApprovedRMM)) or (InitiatingProcessFileName in~("msedge.exe", "chrome.exe", "msedgewebview2.exe", "Outlook.exe"))
+or (InitiatingProcessFileName in("gethelp.exe", "svchost.exe") and RemoteUrl has "diagnostics.support.services.microsoft.com"))
+| summarize LastSeen = arg_max(TimeGenerated, *), FirstSeen = arg_min(TimeGenerated, *), URLs = make_set(RemoteUrl), FolderPaths = make_set(InitiatingProcessFolderPath), FileDescription = make_set(InitiatingProcessVersionInfoFileDescription), OriginalVersionFileName = make_set(InitiatingProcessVersionInfoOriginalFileName) by DeviceId, DeviceName, InitiatingProcessAccountName, InitiatingProcessAccountUpn, InitiatingProcessFileName
+| project FirstSeen, LastSeen, DeviceId, DeviceName, InitiatingProcessAccountName, InitiatingProcessAccountUpn, InitiatingProcessFileName, OriginalVersionFileName, FileDescription, FolderPaths, URLs
+
+// Description: RMM (Remote Monitoring & Management) tools are used to remotely connect and interact with devices. Detects network traffic with URL indicators of known RMM tools.

@@ -1,0 +1,6 @@
+DeviceNetworkEvents
+  | where InitiatingProcessCommandLine contains "mshta" or InitiatingProcessVersionInfoOriginalFileName == "MSHTA.EXE"
+  | project TimeGenerated, ActionType, DeviceId, DeviceName, LocalIP, InitiatingProcessAccountName, InitiatingProcessAccountUpn, InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessFolderPath, InitiatingProcessCommandLine, RemoteIP, RemotePort, RemoteUrl
+
+// Description: MSHTA can be used to execute remote HTA files held on external servers.
+//  https://redcanary.com/threat-detection-report/techniques/mshta/

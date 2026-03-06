@@ -1,0 +1,6 @@
+DeviceProcessEvents
+  | where InitiatingProcessFileName in~ ('winword.exe', 'excel.exe', 'outlook.exe', "visio.exe", "onenote.exe", "powerpnt.exe", "mspub.exe", "eqnedt32.exe", "fltldr.exe", "mspub.exe")
+  | where FileName in~("wscript.exe", "cscript.exe", "cmd.exe", "powershell.exe", "rundll32.exe", "regsvr32.exe", "msdt.exe")
+  | where not(FileName == "rundll32.exe" and ProcessCommandLine has_any ("MonitorPrintJobStatus", "CheckDevice") and ProcessCommandLine has_any(@"/pname", @"/pjob")) // Printjobs
+
+// Description: Detects Office applications launching suspicious child processes potentially indicating abuse of the Office product.

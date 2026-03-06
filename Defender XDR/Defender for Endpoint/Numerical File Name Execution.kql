@@ -1,0 +1,20 @@
+union isfuzzy=true (
+  DeviceProcessEvents
+  | extend ScriptName = extract('([A-Z]:[^\"]+)', 1, InitiatingProcessCommandLine) | extend ScriptName = trim_end("}", ScriptName) | extend ScriptName = trim_end("'", ScriptName) | extend ScriptName = split(ScriptName, '\\')[-1]
+  | extend ExecutableName = iff(isempty(ScriptName), FileName, ScriptName) | extend ExecutableName = split(ExecutableName, "'")[0] | where ExecutableName has_any (".bat", ".cmd", ".ps1", ".vbs", ".vb", ".wsh", ".wsf", ".js", ".hta", ".exe")
+  | extend TotalFileNameLength = strlen(ExecutableName) 
+  | extend ActualFileName = split(ExecutableName, ".")[-2] | where ActualFileName matches regex @"^[0-9]{1,10}$"
+  | extend ActualFileNameLength = strlen(ActualFileName) | where ActualFileNameLength <= 10 and TotalFileNameLength <= 15
+  ),
+  (SecurityEvent
+  | extend ScriptName = extract_all('([A-Z]:[^\"]+)', CommandLine)[1] | extend tostring(ScriptName)
+  | extend ScriptName = trim_end("}", ScriptName) | extend ScriptName = trim_end("'", ScriptName) | extend ScriptName = split(ScriptName, '\\')[-1]
+  | extend ExecutableName = iff(isempty(ScriptName), Process, ScriptName) | extend ExecutableName = split(ExecutableName, "'")[0] | where ExecutableName has_any (".bat", ".cmd", ".ps1", ".vbs", ".vb", ".wsh", ".wsf", ".js", ".hta", ".exe")
+  | extend TotalFileNameLength = strlen(ExecutableName)
+  | extend ActualFileName = split(ExecutableName, ".")[-2] | where ActualFileName matches regex @"^[0-9]{1,10}$"
+  | extend ActualFileNameLength = strlen(ActualFileName) | where ActualFileNameLength <= 10 and TotalFileNameLength <= 15
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, InitiatingProcessCommandLine = CommandLine, ExecutableName
+  )
+
+// Description: Attackers may use shortened/entirely numerical file value names compared to legitimate vendors where these should be detailed and less random.
+//  https://thedfirreport.com/2025/03/31/fake-zoom-ends-in-blacksuit-ransomware/

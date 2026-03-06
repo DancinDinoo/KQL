@@ -1,0 +1,6 @@
+DeviceProcessEvents
+  | where InitiatingProcessParentFileName == "WmiPrvSE.exe" and InitiatingProcessFileName == "cmd.exe" and InitiatingProcessCommandLine has_all (@"/Q", "/c", "1>", "2>&1")
+
+// Description: Identifies known indicators of WMIexec.py after execution.
+// https://github.com/un33k/impacket/blob/master/examples/wmiexec.py
+// https://github.com/fortra/impacket/tree/master

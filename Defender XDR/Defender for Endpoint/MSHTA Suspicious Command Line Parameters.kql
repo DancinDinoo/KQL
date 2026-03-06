@@ -1,0 +1,14 @@
+let suspiciousparameters = pack_array("javascript", "vbscript", ".jpg", ".png", ".lnk", "xls", ".doc", ".mp4", ".zip", ".dll", "wscript.shell");
+  union isfuzzy=true (
+  DeviceProcessEvents
+  | where (InitiatingProcessVersionInfoOriginalFileName =~ "MSHTA.exe" or InitiatingProcessFolderPath endswith "mshta.exe") and InitiatingProcessCommandLine has_any (suspiciousparameters)
+  or (ProcessVersionInfoOriginalFileName =~ "MSHTA.exe" or FolderPath endswith "mshta.exe") and ProcessCommandLine has_any (suspiciousparameters)
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where ParentProcessName endswith "mshta.exe" and CommandLine has_any (suspiciousparameters)
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  )
+
+// Description: MSHTA can be used to execute javascript/vbscript using specific flags. This can enable the execution of scripts.
+// https://redcanary.com/threat-detection-report/techniques/mshta/

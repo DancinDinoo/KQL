@@ -1,0 +1,18 @@
+let legitimateapps = externaldata(knownAppClientId:string, knownAppDisplayName:string)[@\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Feeds/Microsoft.OAuth.KnownApplications.csv\"] with (format=\"csv\") | project knownAppClientId;
+AuditLogs
+| where OperationName == \"Consent to application\"
+| extend targetResources = parse_json(TargetResources)
+| mv-apply tr = targetResources on (extend targetResource = tr.displayName 
+| extend AppID = tr.id
+| mv-apply props = tr.modifiedProperties on (where props.displayName == \"ConsentAction.Permissions\"    
+| extend ConsentActionPermissions = tostring(props.newValue)))
+| parse ConsentActionPermissions with * \"ConsentType: \" GrantConsentType \"Scope: \" ExtractedPermissions \",\" *
+| extend Permissions = split(ExtractedPermissions, \" \")
+| extend InitiatedByUPN = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)
+| extend InitiatedByIP = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)
+| where GrantConsentType != \"AllPrincipals\" // Ignoring Admin consenting for all users
+| where AppID !in (legitimateapps) // Known good applications
+| where ExtractedPermissions has \"offline_access\" and ExtractedPermissions has_any (\"User.Read\",\"Files.Read\", \"Mail.Read\", \"Notes.Read\", \"ChannelMessage.Read\", \"Chat.Read\", \"TeamsActivity.Read\", \"Group.Read\", \"EWS.AccessAsUser.All\", \"EAS.AccessAsUser.All\")
+| project TimeGenerated, OperationName, AdditionalDetails, InitiatedByUPN, InitiatedByIP, AppName = targetResource, AppID, ExtractedPermissions, Permissions, props, tr "
+
+// Detects when a user provides consent to an application with offline access and another permission listed. Offline access provides the app access to resources without requiring MFA. Tools like PwnAuth have been known to abuse these combinations

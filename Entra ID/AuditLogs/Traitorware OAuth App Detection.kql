@@ -1,0 +1,9 @@
+let maliciousoauthapps = externaldata (AppName: string, AppID: string, Publisher: string, Description: string, Tags: dynamic, Permissions: dynamic, References: dynamic) [h@''] with (ignorefirstrecord=true);
+let AppName = maliciousoauthapps | distinct AppName;
+AuditLogs
+  | where Category == "ApplicationManagement"
+  | where OperationName in("Consent to application", "Add application")
+  | extend ConsentedAppID = tostring(TargetResources[0].id) | extend ConsentedAppName = tostring(TargetResources[0].displayName)
+  | where ConsentedAppName in~ (AppName) | lookup maliciousoauthapps on $left.ConsentedAppName == $right.AppName
+
+// Pulls data from a storage account with the fields listed, you will need to change this depending on what columns your data has. Based on this https://huntresslabs.github.io/rogueapps/ & https://www.huntress.com/blog/never-just-one-termite-6-months-of-researching-oauth-application-attacks

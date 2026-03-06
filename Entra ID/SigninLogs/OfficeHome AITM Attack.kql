@@ -1,0 +1,11 @@
+  let SuccessCodes = dynamic([0, 50055, 50057, 50155, 50105, 50133, 50005, 50076, 50079, 50173, 50158, 50072, 50074, 53003, 53000, 53001, 50129]);
+  SigninLogs
+  | where ResultType in(SuccessCodes) // Successful logins
+  | where ResourceDisplayName == "OfficeHome" // Commonly abused portal
+  | where RiskDetail != "none" // Risky signins 
+  | extend DeviceId = tostring(DeviceDetail.deviceId) | where isempty(DeviceId) // Non corporate device
+  | extend Browser = tostring(DeviceDetail.browser) | extend OS = tostring(DeviceDetail.operatingSystem) // Device Properties
+  | project TimeGenerated, OperationName, ResultType, Identity, UserPrincipalName, IPAddress, Location, DeviceId, Browser, OS, AppDisplayName, UserAgent, RiskDetail, RiskState
+
+// Detects a risky signin to the OfficeHome portal, commonly abused by threat actors. 
+// https://www.microsoft.com/en-us/security/blog/2023/06/08/detecting-and-mitigating-a-multi-stage-aitm-phishing-and-bec-campaign/

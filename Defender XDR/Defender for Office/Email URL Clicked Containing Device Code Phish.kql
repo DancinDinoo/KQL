@@ -1,0 +1,6 @@
+UrlClickEvents
+| where UrlChain has_any("microsoft.com/devicelogin", "login.microsoftonline.com/common/oauth2/deviceauth")
+| join EmailEvents on NetworkMessageId
+
+// Description: Seen in the Microsoft article a delivery mechanism for the device codes has been emails. Any emails sent using the device code attack method will contain one of two Microsoft authorization links microsoft.com/devicelogin or login.microsoftonline.com/common/oauth2/deviceauth.
+// https://www.microsoft.com/en-us/security/blog/2025/02/13/storm-2372-conducts-device-code-phishing-campaign/

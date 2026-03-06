@@ -1,0 +1,4 @@
+DeviceNetworkEvents
+| where InitiatingProcessFileName == "wscript.exe" and RemoteIPType == "Public"
+
+// Description: Detects outbound connections made from the WScript.exe engine.

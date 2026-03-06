@@ -1,0 +1,15 @@
+let suspiciouscmdlets = pack_array(@"/download", @"/transfer", @"/AddFile", @"/AddFileSet", @"/AddFileWithRanges");
+  union isfuzzy=true
+  (DeviceProcessEvents
+  | where (ProcessVersionInfoOriginalFileName =~ "bitsadmin.exe" and ProcessCommandLine has_any (suspiciouscmdlets)) or
+  (InitiatingProcessVersionInfoOriginalFileName in~ ("powershell.exe","pwsh.dll") and ProcessVersionInfoOriginalFileName =~ "bitsadmin.exe")
+  ),
+  (
+  SecurityEvent
+  | where EventID == "4688"
+  | where (Process == "bitsadmin.exe" and ParentProcessName in~ ("powershell.exe", "pwsh.dll")) or
+  (Process == "bitsadmin.exe" and CommandLine has_any (suspiciouscmdlets))
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  )
+
+// Description: Native windows tool which can be used to upload/download files from a remote HTTP/SMB server.

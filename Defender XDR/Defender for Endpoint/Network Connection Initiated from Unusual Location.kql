@@ -1,0 +1,13 @@
+let folderpath = pack_array(@"C:\Users\public", @"\temp\", @"\Perflogs\", @"\$Recycle.bin", @"\Users\Default\", @"\Windows\Fonts\", @"\Windows\IME\", @"\Windows\System32\Tasks\", @"\Windows\Tasks\", @"\config\systemprofile\", @"\Windows\addins\");
+  let appdataregex = @"(?i).:\\users\\.*\\appdata\\.*";
+  let allowedtempprocesses = pack_array("");
+  let versionfilenames = pack_array("");
+  let versionfiledescriptions = pack_array("");
+  DeviceNetworkEvents
+  | extend FolderPathCheck = split(InitiatingProcessFolderPath, '\\') // This is for ProgramData, because there's so many subdirectories
+  | extend FolderPathCount = array_length(FolderPathCheck)
+  | where RemoteIPType == "Public"
+  | where InitiatingProcessFolderPath has_any(folderpath) or (InitiatingProcessFolderPath matches regex (appdataregex) and FolderPathCount == "5")
+  | where not((InitiatingProcessFolderPath contains @"\temp\") and InitiatingProcessFolderPath has_any(allowedtempprocesses) or (InitiatingProcessVersionInfoInternalFileName has_any(versionfilenames)) or InitiatingProcessVersionInfoFileDescription has_any(versionfiledescriptions)) // Temp exclusions
+
+// Description: Detects where an outbound network connection is made from any folder location typically abused or unusual for a device.

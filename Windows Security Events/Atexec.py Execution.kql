@@ -1,0 +1,25 @@
+  SecurityEvent
+  | where EventID  == "4699" // Event ID for deletion
+  | extend Events = parse_xml(EventData)
+  | extend TargetUserName = tostring(parse_json(tostring(parse_json(tostring(Events.EventData)).Data))[1].["#text"])
+  | extend SchedueledTaskName = trim_start(@"\\",tostring(parse_json(tostring(parse_json(tostring(Events.EventData)).Data))[4].["#text"]))
+  | where strlen(SchedueledTaskName) == "8"
+  | project Deletion_TimeGenerated = TimeGenerated, InitiatingUser = TargetUserName, Computer, SchedueledTaskName
+  | join kind=inner (
+  SecurityEvent
+  | where EventID == "4698" // Event ID for creation
+  | extend Events = parse_xml(EventData)
+  | extend TargetUserName = tostring(parse_json(tostring(parse_json(tostring(Events.EventData)).Data))[1].["#text"])
+  | extend SchedueledTaskName = trim_start(@"\\",tostring(parse_json(tostring(parse_json(tostring(Events.EventData)).Data))[4].["#text"]))
+  | extend ScheduledTaskParameters = tostring(parse_json(tostring(parse_json(tostring(Events.EventData)).Data))[5].["#text"]) | extend ParsedParameters = parse_xml(ScheduledTaskParameters)
+  | extend CommandRan = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(ParsedParameters.Task)).Actions)).Exec)).Arguments)
+  | extend InitiatingFile = tostring(parse_json(tostring(parse_json(tostring(parse_json(tostring(ParsedParameters.Task)).Actions)).Exec)).Command)
+  | project Creation_TimeGenerated = TimeGenerated, InitiatingUser = TargetUserName, Computer, SchedueledTaskName, ScheduledTaskParameters, ParsedParameters, CommandRan, InitiatingFile
+  ) on SchedueledTaskName
+  | extend TimeBetween = Deletion_TimeGenerated - Creation_TimeGenerated
+  | where TimeBetween < 5s and InitiatingFile == "cmd.exe" and strlen(SchedueledTaskName) == "8"
+  | project Creation_TimeGenerated, Deletion_TimeGenerated, InitiatingUser, Computer, SchedueledTaskName, CommandRan, InitiatingFile, ScheduledTaskParameters, ParsedParameters
+
+  // Identifies known indicators of Atexec.py after execution
+  // https://tools.thehacker.recipes/impacket/examples/atexec.py 
+  // https://github.com/fortra/impacket/tree/master

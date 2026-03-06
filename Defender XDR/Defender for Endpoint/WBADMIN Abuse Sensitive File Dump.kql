@@ -1,0 +1,14 @@
+union isfuzzy=true
+  (DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName =~ "wbadmin.exe"
+  | where ProcessCommandLine has_all ("start","backup") and ProcessCommandLine has_any ("ntds.dit","SYSTEM","SECURITY","SAM")
+  ),
+  (
+  SecurityEvent
+  | where Process == "wbadmin.exe"
+  | where EventID == "4688"
+  | where CommandLine  has_all ("start","backup") and CommandLine has_any ("ntds.dit","SYSTEM","SECURITY","SAM")
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, CommandLine
+  )
+
+// Description: The wbadmin tool can be used to dump sensitive data like the NTDS.dit file or the SAM registry files allowing them to gain access to password hashes.

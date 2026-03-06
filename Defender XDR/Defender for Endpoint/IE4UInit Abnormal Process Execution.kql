@@ -1,0 +1,8 @@
+DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName =~ "ie4uinit.exe" 
+  | where InitiatingProcessCommandLine has "BaseSettings"
+  | project TimeGenerated, AccountName, DeviceName, InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessCommandLine, ProcessCommandLine, FolderPath, ProcessVersionInfoOriginalFileName, FileName
+
+// Description: A known IEU4init issue can allow a TA to execute commands from a custom crafted .inf file. This detects when there is evidence of ieu4innit.exebeing executed using the vulnerable flag -basesettings
+//  https://lolbas-project.github.io/lolbas/Binaries/Ie4uinit/
+//  https://bohops.com/2018/03/10/leveraging-inf-sct-fetch-execute-techniques-for-bypass-evasion-persistence-part-2/

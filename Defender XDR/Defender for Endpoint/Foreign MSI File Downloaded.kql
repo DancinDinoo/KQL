@@ -1,0 +1,9 @@
+let allowedfiles = pack_array("");
+  DeviceFileEvents
+  | where ActionType == "FileCreated"
+  | where FileName endswith ".msi"
+  | where InitiatingProcessCommandLine has_any ("http", "https")
+  | where InitiatingProcessFileName !in(allowedfiles)
+
+// Description: MSI files are windows installer files that can be used by an attacker to package malware.
+// https://thedfirreport.com/2025/02/24/confluence-exploit-leads-to-lockbit-ransomware/

@@ -1,0 +1,9 @@
+DeviceFileEvents
+  | where ActionType == "FileCreated" and FileName in~ ("ie4uinit.exe", "ieuinit.inf")
+  | where not(FolderPath in~("C:\\Windows\\System32\\ie4uinit.exe", @"c:\\windows\\sysWOW64\\ie4uinit.exe", "C:\\Windows\\System32\\ieuinit.inf", "c:\\windows\\sysWOW64\\ieuinit.inf"))
+  | where not(InitiatingProcessVersionInfoOriginalFileName =~ ("TiWorker.exe") and InitiatingProcessCommandLine =~ "TiWorker.exe -Embedding") // Windows Internals
+  | project TimeGenerated, AccountName = InitiatingProcessAccountName, DeviceName, InitiatingProcessCommandLine, InitiatingProcessFileName, PreviousFileName, PreviousFolderPath, FileName, FolderPath // Moving/Copying legitimate binary to new directory
+
+// Description: A known Ie4uinit issue can allow a TA to execute commands from a custom crafted .inf file. This detects when there is evidence of ieu4innit.exe or ieuinit.inf being copied to a new directory.
+// https://lolbas-project.github.io/lolbas/Binaries/Ie4uinit/
+// https://bohops.com/2018/03/10/leveraging-inf-sct-fetch-execute-techniques-for-bypass-evasion-persistence-part-2/

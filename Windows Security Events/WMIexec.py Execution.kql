@@ -1,0 +1,7 @@
+SecurityEvent
+| where EventID == "4688"
+| where ParentProcessName endswith "WmiPrvSe.exe" and Process == "cmd.exe" and CommandLine has_all("/Q", "/c", "2>&1", "127.0.0.1", "ADMIN$")
+
+// Identifies known indicators of WMIexec.py after execution.
+// https://github.com/un33k/impacket/blob/master/examples/wmiexec.py 
+// https://github.com/fortra/impacket/tree/master

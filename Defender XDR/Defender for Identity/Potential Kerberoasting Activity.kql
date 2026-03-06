@@ -1,0 +1,19 @@
+let MaxCount = 25; // Number of requests per 2 minute timeframe, depending on org size.
+IdentityLogonEvents
+| where ActionType == "LogonSuccess"
+| where Protocol == "Kerberos"
+| extend json = todynamic(parse_json(tostring(AdditionalFields)))
+| extend SPN = json.Spns,
+       AttackTechniques = json.AttackTechniques
+      | project-away json
+| where isnotempty(SPN)
+| where AttackTechniques has "T1558.003"
+| mv-expand SPN
+| extend SPNType = tostring(extract(@"^\w+",0,tostring(SPN)))
+| distinct tostring(SPN), DeviceName, AccountUpn, AccountSid, bin(TimeGenerated, 2m), ReportId, tostring(AttackTechniques)
+| summarize count(), SPNS=(make_list(SPN, 100000)),ReportId=tostring((make_list(ReportId, 100000))[0]) by AccountUpn,AccountSid,DeviceName, bin(TimeGenerated, 2m), tostring(AttackTechniques)
+| extend SPNS = (replace_regex(tostring(SPNS), @'[^\w+-\/]+', ''))
+| where count_ >= MaxCount
+| extend AccountDomain = tostring(split(AccountUpn, '@')[1]), AccountName = tostring(split(AccountUpn, '@')[0])
+
+// Description: Detects user accounts that request a number of SPN tickets over a threshold in a 2 minute window.

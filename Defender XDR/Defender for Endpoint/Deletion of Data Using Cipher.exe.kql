@@ -1,0 +1,13 @@
+union isfuzzy = true (
+  DeviceProcessEvents
+  | where FileName =~ "cipher.exe"
+  | where ProcessCommandLine has "/w"
+  ),
+  (
+  SecurityEvent
+  | where Process == "cipher.exe"
+  | where CommandLine has "/w"
+  | project TimeGenerated, AccountName = SubjectUserName, SubjectAccount, SubjectUserSid, DeviceName = Computer, EventID, ProcessCommandLine = CommandLine, NewProcessName, ParentProcessName
+  )
+
+// Description: This query checks for attempts to delete data on a drive using cipher.exe. This activity is typically done by ransomware to prevent recovery of data after encryption.

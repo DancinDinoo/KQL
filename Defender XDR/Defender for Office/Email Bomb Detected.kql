@@ -1,0 +1,10 @@
+let EmailLimit = 500;
+EmailEvents
+| where TimeGenerated > ago(1h)
+| where EmailDirection == "Inbound"
+| where DeliveryAction == "Delivered"
+| summarize Senders = make_set(SenderFromAddress), EmailCount = count() by RecipientEmailAddress
+| where EmailCount > EmailLimit
+
+// Description: A user has received over 500 emails in the last hour. 
+// https://www.hhs.gov/sites/default/files/email-bombing-sector-alert-tlpclear.pdf\nhttps://www.microsoft.com/en-us/security/blog/2024/05/15/threat-actors-misusing-quick-assist-in-social-engineering-attacks-leading-to-ransomware/

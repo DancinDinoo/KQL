@@ -1,0 +1,4 @@
+DeviceNetworkEvents
+  | where InitiatingProcessFileName == "cscript.exe" and RemoteIPType == "Public"
+
+// Description: Detects outbound connections made from the CScript.exe engine.

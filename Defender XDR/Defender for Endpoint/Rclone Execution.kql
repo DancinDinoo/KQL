@@ -1,0 +1,11 @@
+union isfuzzy=true(
+  DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName == "rclone.exe" or FolderPath endswith "rclone.exe" or ProcessCommandLine contains "rclone"
+  ),
+  (
+  SecurityEvent
+  | where EventID == "4688"
+  | where ProcessName =~ "rclone.exe" or NewProcessName endswith "rclone.exe" or CommandLine contains "rclone"
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine)
+
+// Description: Rclone is a commandline tool used for file transfers to cloud storage. A tool frequently used by ransomware actors to exfiltrate data.

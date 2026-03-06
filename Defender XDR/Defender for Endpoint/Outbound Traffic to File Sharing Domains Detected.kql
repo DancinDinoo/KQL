@@ -1,0 +1,7 @@
+let MaliciousSites = dynamic(["temp.sh", "mega.io"]);
+  DeviceNetworkEvents
+  | where RemoteUrl in~ (MaliciousSites)
+    or InitiatingProcessCommandLine has_any (MaliciousSites)
+  | project TimeGenerated, DeviceName, InitiatingProcessAccountName, InitiatingProcessCommandLine, RemoteUrl, RemoteIP, RemotePort
+
+// Description: This query detects device network activity involving known abused file sharing domains by checking both direct URL connections and command lines that reference these domains (e.g temp.sh, mega.io)

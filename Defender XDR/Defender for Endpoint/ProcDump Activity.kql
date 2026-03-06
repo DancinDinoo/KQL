@@ -1,0 +1,12 @@
+union isfuzzy = true (
+  DeviceProcessEvents
+  | where FileName in~ ("procdump.exe", "procdump64.exe") or ProcessVersionInfoOriginalFileName == "procdump"
+  | sort by TimeGenerated
+  ),
+  (
+  SecurityEvent
+  | where Process in~ ("procdump.exe", "procdump64.exe")
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  )
+
+// Description: ProcDump is an open source CI tool part of the sysinternals toolkit used to monitor CPU spikes and generate crashdumps. It can be used to dump lssass memory containing credentials.

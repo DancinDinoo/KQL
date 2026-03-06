@@ -1,0 +1,20 @@
+union isfuzzy = true (DeviceProcessEvents
+  | where (
+  (
+  (InitiatingProcessParentFileName in("w3wp.exe", "beasvc.exe","httpd.exe")
+  or InitiatingProcessParentFileName startswith "tomcat")
+  or InitiatingProcessFileName startswith "tomcat")
+  or InitiatingProcessFileName in("w3wp.exe", "beasvc.exe", "httpd.exe")
+  )
+  and FileName in~('Cmd.exe', 'Powershell.exe', 'Pwsh.exe', 'Pwsh.dll', 'Cscript.exe', 'Wscript.exe', 'bitsadmin.exe', 'mshta.exe', 'rundll.exe', 'regsvr32.exe', 'wget.exe', 'powershell_ise.exe', 'curl.exe')
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where (
+  (ParentProcessName has_any("w3wp.exe", "beasvc.exe","httpd.exe", "tomcat"))
+  )
+  and Process in~('Cmd.exe', 'Powershell.exe', 'Pwsh.exe', 'Pwsh.dll', 'Cscript.exe', 'Wscript.exe', 'bitsadmin.exe', 'mshta.exe', 'rundll.exe', 'regsvr32.exe', 'wget.exe', 'powershell_ise.exe', 'curl.exe')
+  | project TimeGenerated, AccountName = SubjectUserName, SubjectAccount, SubjectUserSid, DeviceName = Computer, EventID, ProcessCommandLine = CommandLine, ParentProcessName, NewProcessName, FileName = Process
+  )
+
+// Description: This query was originally published in the threat analytics report, Operation Soft Cell. Operation Soft Cell is a series of campaigns targeting users' call logs at telecommunications providers throughout the world. These attacks date from as early as 2012. Operation Soft Cell operators sometimes use legitimate web server processes to launch commands, especially for network discovery and user/owner discovery. The following query detects activity of this kind. Reference - https://www.cybereason.com/blog/operation-soft-cell-a-worldwide-campaign-against-telecommunications-providers

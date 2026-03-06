@@ -1,0 +1,8 @@
+  let legitimateactivities = pack_array("Basic", "Edit", "Create", "Changepassword", "Restore");
+  CloudAppEvents
+  | where AccountDisplayName == "On-Premises Directory Synchronization Service Account"
+  | extend Workload = tostring(RawEventData.Workload)
+  | where not(ActivityType in (legitimateactivities) and Workload == "AzureActiveDirectory") // Normal BAU Activity
+
+  // AzureAD Connect is a service designed to integrate AD & AAD meaning the actions the associated accounts take are predictable. Anything outside this normal should be investigated.
+  // https://www.microsoft.com/en-us/security/blog/2024/09/26/storm-0501-ransomware-attacks-expanding-to-hybrid-cloud-environments/

@@ -1,0 +1,9 @@
+DeviceProcessEvents
+  | where InitiatingProcessFileName in~("cmd.exe", "powershell.exe", "rundll32.exe")
+  | where ProcessCommandLine has_any ("arp", "whoami", "netstat", "nslookup", "nltest", "domain", "tasklist", "net", "route", "tzlist" "time", "tracert", "ping", "wmic", "admin$", "c$", "taskkill", "echo", "srvany", "instsrv", "quser", "ipconfig", "hostname")
+  | summarize Count = dcount(FileName), Files = make_set(FileName), Commands = make_set(ProcessCommandLine), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by AccountName, DeviceName, InitiatingProcessFileName, InitiatingProcessParentFileName
+  | where Count >= 3
+
+// Description: Detects when a number of windows binaries that can be used for reconnaissance are executed in a short time period potentially indicating an attacker enumerating the network.
+//  https://attack.mitre.org/techniques/T0840/
+//  https://thedfirreport.com/2024/04/01/from-onenote-to-ransomnote-an-ice-cold-intrusion/#discovery

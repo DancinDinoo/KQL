@@ -1,0 +1,13 @@
+let commandlineinterpreters = pack_array("cmd.exe", "powershell.exe", "pwsh.exe", "pwsh.dll", "wscript.exe", "cscript.exe", "regsvr32.exe", "rundll32.exe", "reg.exe");
+  union isfuzzy=true
+  (DeviceProcessEvents
+  | where (InitiatingProcessVersionInfoOriginalFileName == "MSHTA.EXE" and (ProcessVersionInfoOriginalFileName in~ (commandlineinterpreters) or FolderPath has_any (commandlineinterpreters)))
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where ParentProcessName endswith "mshta.exe" and Process in~ (commandlineinterpreters)
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  )
+
+// Description: MSHTA can be used to execute scripts by a TA.
+//  https://redcanary.com/threat-detection-report/techniques/mshta/

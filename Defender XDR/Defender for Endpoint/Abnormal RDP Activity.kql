@@ -1,0 +1,17 @@
+let CommonUsedRDPCounter = 10; // This is how many times a user must RDP to a device to be considered BAU and ignored
+let LastHourRDP = DeviceLogonEvents
+| where TimeGenerated > ago(1h) // Last Hour
+| where ActionType == "LogonSuccess" and LogonType == "RemoteInteractive";
+//| distinct AccountName, DeviceName; // RDP
+let CommonOlderRDPDevices = DeviceLogonEvents
+| where TimeGenerated between (ago(14d) .. ago(1h))
+| where ActionType == "LogonSuccess" and LogonType == "RemoteInteractive" // RDP
+| summarize TotalLogons = count() by AccountName, DeviceName
+| where TotalLogons >= CommonUsedRDPCounter
+| distinct AccountName, DeviceName; // Anything with over a set number of logins in 14 days is likely BAU
+LastHourRDP
+| join kind=leftanti CommonOlderRDPDevices on AccountName, DeviceName
+| summarize DeviceNames = make_set(DeviceName), DeviceIDs = make_set(DeviceId), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated) by AccountName
+| extend NumberOfDevices = array_length(DeviceNames) | where NumberOfDevices > 3
+
+// Description: Detects users logging into a higher than normal volume of devices using RDP where they have previously not been seen commonly interacting.

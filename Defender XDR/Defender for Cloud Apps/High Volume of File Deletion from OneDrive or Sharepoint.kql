@@ -1,0 +1,14 @@
+  let relevantOperations = pack_array("FileDeleted", "FileRecycled", "FileDeletedFirstStageRecycleBin", "FileDeletedSecondStageRecycleBin", "FileVersionsAllMinorsRecycled", "FileVersionRecycled", "FileVersionsAllRecycled");
+  let AppIds = pack_array("20892", "15600");
+  let PersonalOneDriveDeletionThreshold = 500;
+  let SharepointDeletionThreshold = 100;
+  CloudAppEvents
+  | where ActionType in~(relevantOperations)
+  | where ApplicationId in(AppIds)
+  | extend FolderLocationType = tostring(split(ObjectName, '/')[3])
+  | extend SiteUrl = tostring(RawEventData.SiteUrl) | extend SourceFileName_ = tostring(RawEventData.SourceFileName)
+  | summarize FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated), FIleLocations = make_set(SiteUrl), FilesDeleted = make_set(SourceFileName_), TotalFilesDeleted = count() by AccountId, AccountDisplayName, ApplicationId, FolderLocationType
+  | where iff(FolderLocationType == "personal" and ApplicationId == "15600", TotalFilesDeleted >= PersonalOneDriveDeletionThreshold, TotalFilesDeleted >= SharepointDeletionThreshold)
+
+  // Detects high volumes of file deletion within an hour window from a single user. Implements separate thresholds for personal OneDrives vs SharePoint sites.
+  

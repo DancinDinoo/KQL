@@ -1,0 +1,4 @@
+DeviceEvents
+  | where InitiatingProcessParentFileName == "services.exe" and InitiatingProcessFileName == "svchost.exe" and InitiatingProcessCommandLine == "svchost.exe -k localService -p -s RemoteRegistry" and FileName matches regex @"\w{8}\.tmp"
+
+// Description: Identifies known indicators of Secretsdump.py after execution.

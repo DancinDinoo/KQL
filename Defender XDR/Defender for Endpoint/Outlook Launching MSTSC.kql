@@ -1,0 +1,7 @@
+DeviceProcessEvents 
+| where InitiatingProcessFileName in~ ("outlook.exe", "olk.exe") or InitiatingProcessParentFileName in~ ("outlook.exe", "olk.exe") 
+| where FileName == "mstsc.exe"
+| project TimeGenerated, AccountName, DeviceName, InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessCommandLine, ProcessCommandLine, FileName
+
+// Description: https://www.microsoft.com/en-us/security/blog/2024/10/29/midnight-blizzard-conducts-large-scale-spear-phishing-campaign-using-rdp-files/
+// Detects where an RDP file has been launched from a parent of outlook.

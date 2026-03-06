@@ -1,0 +1,9 @@
+//let badpipenames = externaldata (PipeName: string, ["Tool/Malware"]: string) [h@''] with(format='csv', ignoreFirstRecord=true) | summarize make_list(PipeName);
+  DeviceEvents
+  | where ActionType == "NamedPipeEvent"
+  | extend ParsedFields=parse_json(AdditionalFields)
+  | where ParsedFields.FileOperation == "File created"
+  | extend PipeName = ParsedFields.PipeName //| where PipeName has_any (badpipenames)
+  | project TimeGenerated, ActionType, DeviceName, InitiatingProcessAccountDomain, InitiatingProcessAccountName, InitiatingProcessFolderPath, InitiatingProcessCommandLine, ParsedFields.FileOperation, ParsedFields.PipeName
+
+// Description: Identifies matches between known C2 pipenames and new pipe creation events.

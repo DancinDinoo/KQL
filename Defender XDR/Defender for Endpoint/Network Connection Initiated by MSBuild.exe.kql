@@ -1,0 +1,5 @@
+DeviceNetworkEvents
+  | where InitiatingProcessVersionInfoOriginalFileName == "MSBuild.exe"
+  | where not(ipv4_is_private(RemoteIP)) and RemoteIPType != "Loopback"
+
+// Description: MSBuild is a native windows open source platform used for building applications. It can be abused by an attacker to run malicious XML code.

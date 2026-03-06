@@ -1,0 +1,22 @@
+  let endtime = 1d;
+  let starttime = 8d;
+  let lastdaycountlimit = ; // Failed login last day count
+  let 7daycountlimit = ; // Failed login seven day count
+  SecurityEvent
+  | where TimeGenerated >= ago(endtime) // Last Day activity
+  | where EventID == 4625 and AccountType =~ "User" // Failed logins to a user account
+  | where not(ipv4_is_private(IpAddress)) // Remove any private IPs
+  | where Account !starts_with "MSOL" // Removes default windows account for syncing passwords
+  | summarize OneDayStartTime = min(TimeGenerated), OneDayEndTime = max(TimeGenerated), LastDaySubStatusCodes = make_set(SubStatus), Computers = make_set(Computer), Workstations = make_set(WorkstationName), LastDayImpactedIPAddresses = make_set(IpAddress), LastDayTotalFailedLogonCount = count() by EventID, Account
+  | join kind=leftouter (
+      SecurityEvent
+      | where TimeGenerated between (ago(starttime) .. ago(endtime))
+      | where EventID == 4625 and AccountType =~ "User"
+      | where not(ipv4_is_private(IpAddress))
+      | summarize 7DayStartTime = min(TimeGenerated), 7DayEndTime = max(TimeGenerated), Last7DaysSubStatusCodes = make_set(SubStatus), Computers = make_set(Computer), Workstations = make_set(WorkstationName), 7DayImpactedIPAddresses = make_set(IpAddress), 7DayTotalFailedLogonCount = count() by EventID, Account
+  ) on Account
+  | extend 7DayAverageLogonCount = 7DayTotalFailedLogonCount / 7
+  | extend LastDayImpactedIPAddresses = array_length(LastDayImpactedIPAddresses)
+  | extend 7DaysImpactedIPAddresses= array_length(7DayImpactedIPAddresses)
+  | project EventID, Account, Computers, Workstations, LastDayImpactedIPAddresses, 7DayImpactedIPAddresses, LastDaySubStatusCodes, Last7DaysSubStatusCodes, LastDayTotalFailedLogonCount, 7DayTotalFailedLogonCount, 7DayAverageLogonCount
+  | where LastDayTotalFailedLogonCount > lastdaycountlimit or 7DayAverageLogonCount >= 7daycountlimit // Breach limits

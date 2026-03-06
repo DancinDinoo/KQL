@@ -1,0 +1,20 @@
+union isfuzzy=true (
+  DeviceProcessEvents
+  | where InitiatingProcessFileName in ("cmd.exe", "powershell.exe", "pwsh.exe", "pwsh.dll", "wscript.exe", "cscript.exe", "mshta.exe")
+  | extend ScriptWithExtension = extract('([A-Z]:[^\"]+)', 1, InitiatingProcessCommandLine) | extend ScriptWithExtension = trim_end("}", ScriptWithExtension) | extend ScriptWithExtension = trim_end("'", ScriptWithExtension) | extend ScriptWithExtension = split(ScriptWithExtension, '\\')[-1]
+  | extend ActualScriptName = split(ScriptWithExtension, '.')[0]
+  | extend ScriptNameLength = strlen(ActualScriptName)
+  | where isnotempty(ActualScriptName) and ScriptWithExtension has_any (".bat", ".cmd", ".ps1", ".vbs", ".vb", ".wsh", ".wsf", ".js", ".hta") and ScriptNameLength < 6 and InitiatingProcessCommandLine has_any (@"\Perflogs\", @":\Users\Public\", @"\Temporary Internet", @"\Windows\Temp", @"%TEMP%", @"%TMP%", @"%LocalAppData%\Temp", @"\Downloads\", @"\Documents\", @"\Music\", @"\AppData\")
+  ),
+  (SecurityEvent
+  | where Process in ("cmd.exe", "powershell.exe", "pwsh.exe", "pwsh.dll", "wscript.exe", "cscript.exe", "mshta.exe")
+  | extend ScriptWithExtension = extract_all('([A-Z]:[^\"]+)', CommandLine)[1] | extend tostring(ScriptWithExtension)
+  | extend ScriptWithExtension = trim_end("}", ScriptWithExtension) | extend ScriptWithExtension = trim_end("'", ScriptWithExtension) | extend ScriptWithExtension = split(ScriptWithExtension, '\\')[-1]
+  | extend ActualScriptName = split(ScriptWithExtension, '.')[0]
+  | extend ScriptNameLength = strlen(ActualScriptName)
+  | where isnotempty(ActualScriptName) and ScriptWithExtension has_any (".bat", ".cmd", ".ps1", ".vbs", ".vb", ".wsh", ".wsf", ".js", ".hta") and ScriptNameLength < 6 and CommandLine has_any (@"\Perflogs\", @":\Users\Public\", @"\Temporary Internet", @"\Windows\Temp", @"%TEMP%", @"%TMP%", @"%LocalAppData%\Temp", @"\Downloads\", @"\Documents\", @"\Music\", @"\AppData\")
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, InitiatingProcessCommandLine = CommandLine, ActualScriptName, ScriptWithExtension, ScriptNameLength
+  )
+
+// Description: Low character scripts are a common part of threat actor tradecraft. Scripts can commonly be used as stagers or in malicious execution chains. Short named scripts executed from locations like /Temp are suspicious.
+//  https://thedfirreport.com/2025/03/31/fake-zoom-ends-in-blacksuit-ransomware/

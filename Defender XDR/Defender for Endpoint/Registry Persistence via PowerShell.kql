@@ -1,0 +1,5 @@
+DeviceRegistryEvents
+  | where InitiatingProcessVersionInfoOriginalFileName == "PowerShell.EXE" or InitiatingProcessVersionInfoOriginalFileName == "pwsh.dll"
+  | where RegistryKey contains @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run" or RegistryKey contains @"Software\Microsoft\Windows NT\CurrentVersion\Windows" or RegistryKey contains @"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run" or RegistryKey contains @"System\CurrentControlSet\Control\Session Manager" or RegistryKey contains @"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" or RegistryKey contains @"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+
+// Description: Registry persistence can be established using the Set-ItemProperty function to target specific registry keys.

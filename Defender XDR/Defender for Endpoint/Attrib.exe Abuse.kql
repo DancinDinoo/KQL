@@ -1,0 +1,6 @@
+DeviceProcessEvents
+  | where FileName == "attrib.exe"
+  | where ProcessCommandLine has_all ("+s", "+h", "/D")
+
+// Description: Attrib.exe is a windows tool used to modify file or directory properties. Attackers can use this to hide files from a user or administrator so they're less likely to be detected.
+// https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/attrib

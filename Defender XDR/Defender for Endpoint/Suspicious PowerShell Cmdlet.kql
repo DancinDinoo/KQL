@@ -1,0 +1,14 @@
+let suspiciouscmdlets = pack_array("Invoke-Mimikatz", "Invoke-GraphRunner", "Invoke-RefreshGraphTokens", "Invoke-AzureHound", "Invoke-AzVMBulkCMD", "Invoke-AzVMCommandREST");
+  (union isfuzzy=true
+  (DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName =~ "PowerShell.EXE" or ProcessVersionInfoOriginalFileName == "pwsh.dll"
+  | where ProcessCommandLine has_any(suspiciouscmdlets)
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where Process == "powershell.exe" or Process == "pwsh.dll"
+  | where CommandLine has_any (suspiciouscmdlets)
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  ))
+
+// Description: Detects usage of a suspicious PowerShell function or invocation of a module related to a malicious package.

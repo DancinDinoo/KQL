@@ -1,0 +1,30 @@
+  let endtime = 1d;
+  let starttime = 8d;
+  let lastdaycountlimit = ; // Failed login last day count
+  let 7daycountlimit = ; // Failed login average seven day count
+  SecurityEvent
+  | where TimeGenerated >= ago(endtime) // Last Day activity
+  | where EventID == 4625 and AccountType =~ "User" // Failed logins to a user account 
+  | where not(ipv4_is_private(IpAddress)) // Remove any private IPs
+  | summarize OneDayStartTime = min(TimeGenerated), OneDayEndTime = max(TimeGenerated), LastDaySubStatusCodes = make_set(SubStatus), Computers = make_set(Computer), Workstations = make_set(WorkstationName), LastDayTotalFailedLogonCount = count() by EventID, Account, IpAddress
+  | join kind=leftouter (
+  SecurityEvent
+  | where TimeGenerated between (ago(starttime) .. ago(endtime))
+  | where EventID == 4625 and AccountType =~ "User"
+  | where not(ipv4_is_private(IpAddress))
+  | summarize 7DayStartTime = min(TimeGenerated), 7DayEndTime = max(TimeGenerated), Last7DaysSubStatusCodes = make_set(SubStatus), Computers = make_set(Computer), Workstations = make_set(WorkstationName), 7DayTotalFailedLogonCount = count() by EventID, Account, IpAddress
+  ) on Account, IpAddress
+  | extend 7DayAverageLogonCount = 7DayTotalFailedLogonCount / 7
+  | where LastDayTotalFailedLogonCount > lastdaycountlimit or 7DayAverageLogonCount >= 7daycountlimit // Breach limits
+  | project EventID, OneDayStartTime, OneDayEndTime, Account, IpAddress, Computers, Workstations, 7DayStartTime, 7DayEndTime, LastDaySubStatusCodes, Last7DaysSubStatusCodes, LastDayTotalFailedLogonCount, 7DayTotalFailedLogonCount, 7DayAverageLogonCount
+  | join kind=leftouter (
+  SecurityEvent
+  | where TimeGenerated >= ago(endtime) // Last Day activity
+  | where EventID == 4624 and AccountType =~ "User" // Successful logons
+  | summarize arg_max(TimeGenerated, *) by Account, IpAddress // Find the latest signin per IP/Account
+  | project SigninTime = TimeGenerated, Account, IpAddress
+  ) on Account, IpAddress
+  | where SigninTime > OneDayEndTime // Check for any signins after the last bracket of attempted logins
+  | project Account, IpAddress, AuthenticatingComputers = Computers, Workstations, LastDayFailedLoginStartTime = OneDayStartTime, LastDayFailedLoginEndTime = OneDayEndTime, LastDayFailedSubStatusCodes = LastDaySubStatusCodes, 7DayFailedLoginStartTime = 7DayStartTime, 7DayFailedLoginEndTime = 7DayEndTime, 7DayFailedSubStatusCodes = Last7DaysSubStatusCodes, Last7DaysAverageFailedLogonCounts = 7DayAverageLogonCount, LatestSuccessfulSigninTimes = SigninTime
+
+  // Detects large volumes of failed logons from an IP address to an account then followed by a successful logon a possible indication of a brute force attack.

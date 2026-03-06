@@ -1,0 +1,18 @@
+let suspiciouscmdlets = pack_array("invoke-webrequest", 'IWR', 'Net.WebClient','downloadfile','downloadstring','invoke-expression', 'iex');
+  let suspiciousflags = pack_array("-nop", '-noni', '-f', '-uri');
+  let globalallowedinitiatingprocesses = pack_array("");
+  (union isfuzzy=true
+  (DeviceProcessEvents
+  | where ProcessVersionInfoOriginalFileName =~ "PowerShell.EXE" or ProcessVersionInfoOriginalFileName == "pwsh.dll"
+  | where not(InitiatingProcessVersionInfoOriginalFileName in(globalallowedinitiatingprocesses) or InitiatingProcessFileName in (globalallowedinitiatingprocesses))
+  | where ProcessCommandLine has_any(suspiciouscmdlets) or ProcessCommandLine has_any (suspiciousflags)
+  ),
+  (SecurityEvent
+  | where EventID == "4688"
+  | where Process == "powershell.exe" or Process == "pwsh.dll"
+  | where CommandLine has_any (suspiciouscmdlets) or CommandLine has_any (suspiciousflags)
+  | where not(ParentProcessName has_any(globalallowedinitiatingprocesses))
+  | project TimeGenerated, Activity, ParentProcessName, Process, ProcessId, TokenElevationType, DeviceName = Computer, SubjectAccount, AccountName = SubjectUserName, SubjectUserSid, ProcessCommandLine = CommandLine
+  ))
+
+// Description: Detects usage of a native PowerShell cmdlet that can be abused by a TA.

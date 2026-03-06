@@ -1,0 +1,6 @@
+let allowedIPs = pack_array("");
+  DeviceNetworkEvents
+  | where ActionType == "ConnectionSuccess" and RemotePort == "445" and RemoteIPType != "Loopback" and not(ipv4_is_private(RemoteIP))
+  | where RemoteIP !in(allowedIPs)
+
+// Description: Identifies outbound network traffic via port 445 potentially indicating SMB connections.

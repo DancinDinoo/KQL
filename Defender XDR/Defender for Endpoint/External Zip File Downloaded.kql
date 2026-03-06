@@ -1,0 +1,6 @@
+DeviceFileEvents
+  | where ActionType == "FileCreated"
+  | where FileOriginReferrerUrl has_any ("http", "https") and FileOriginReferrerUrl has ".zip"
+  | project TimeGenerated, InitiatingProcessAccountName, ActionType, DeviceName, FileName, MD5, SHA256, FolderPath, InitiatingProcessFileName, FileOriginReferrerUrl, FileOriginUrl
+
+// Description: Detects when a foreign ZIP file is downloaded, only manual downloads

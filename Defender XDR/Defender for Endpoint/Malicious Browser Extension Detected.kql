@@ -1,0 +1,6 @@
+let maliciousextensions = externaldata (ExtensionID: string, ExtensionName: string) [h@''] with(format='csv', ignoreFirstRecord=true) | project ExtensionID;
+DeviceFileEvents
+| where FileName has_any("PlaceHolder") // Insert maliciousextensions in here
+
+// Description: Identifies known malicious browser extensions being installed on a machine.
+// This requires either a watchlist either locally or in a storage account

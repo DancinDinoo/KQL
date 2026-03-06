@@ -1,0 +1,6 @@
+DeviceProcessEvents
+  | where InitiatingProcessParentFileName matches regex @"\w{8}\.exe" and InitiatingProcessFileName == "cmd.exe" and AccountName == "system" and InitiatingProcessCommandLine has_all ("2^>^&1", "echo", ".bat")
+
+// Description: Identifies known indicators of Psexec.py after execution.
+// https://github.com/fortra/impacket/tree/master
+// https://github.com/un33k/impacket/blob/master/examples/psexec.py

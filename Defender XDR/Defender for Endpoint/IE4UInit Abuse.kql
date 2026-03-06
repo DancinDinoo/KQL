@@ -1,0 +1,12 @@
+DeviceFileEvents
+| where ActionType == "FileCreated" and FileName =~ "ie4uinit.exe"
+| where not(FolderPath =~ "C:\\Windows\\System32\\ie4uinit.exe" or FolderPath =~ @"c:\\windows\\sysWOW64\\ie4uinit.exe")
+| project TimeGenerated, AccountName = InitiatingProcessAccountName, DeviceName, InitiatingProcessCommandLine, InitiatingProcessFileName, FileName, FolderPath; // Moving/Copying legitimate binary to new directory
+
+DeviceProcessEvents
+| where ProcessVersionInfoOriginalFileName =~ "ie4uinit.exe" 
+| where InitiatingProcessCommandLine has "BaseSettings"
+| project TimeGenerated, AccountName, DeviceName, InitiatingProcessParentFileName, InitiatingProcessFileName, InitiatingProcessCommandLine, ProcessCommandLine, FolderPath, ProcessVersionInfoOriginalFileName, FileName
+
+// https://lolbas-project.github.io/lolbas/Binaries/Ie4uinit/
+// https://bohops.com/2018/03/10/leveraging-inf-sct-fetch-execute-techniques-for-bypass-evasion-persistence-part-2/

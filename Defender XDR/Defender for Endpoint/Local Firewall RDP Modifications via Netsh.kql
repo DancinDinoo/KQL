@@ -1,0 +1,8 @@
+DeviceProcessEvents
+| where FileName == \"netsh.exe\"
+| where (ProcessCommandLine has \"firewall\" and ProcessCommandLine has_any(\"remoteadmin\", \"remotedesktop\", \"opmode\", \"reset\")) 
+or (ProcessCommandLine has \"advfirewall\" and ProcessCommandLine has_any (\"remote desktop\", \"remote admin\"))
+or (ProcessCommandLine has \"advfirewall\" and ProcessCommandLine has \"allprofiles\" and ProcessCommandLine has_all(\"set\", \"off\"))
+or ProcessCommandLine has_all (\"localport=3389\", \"action=allow\") 
+
+// Description: Netsh is a native windows tool used to administer network settings. It can be used to edit the local windows firewall and enable RDP access, allowing interactive sessions to a device.

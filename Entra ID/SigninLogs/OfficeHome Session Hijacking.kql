@@ -1,0 +1,9 @@
+SigninLogs
+| where ResultType == "0" // Successful logins
+| where ResourceDisplayName == "OfficeHome" // Commonly abused portal
+| extend DeviceId = tostring(DeviceDetail.deviceId) | extend Browser = tostring(DeviceDetail.browser) | extend OS = tostring(DeviceDetail.operatingSystem) // Device Properties
+| summarize IPCount = dcount(IPAddress), SigninIPs = make_list(IPAddress), FirstSeen = min(CreatedDateTime), LastSeen = max(CreatedDateTime), Devices = make_set(DeviceId), Browsers = make_set(Browser), OperatingSystems = make_set(OS) by UserPrincipalName, ResourceDisplayName, Time = bin(CreatedDateTime, 15m)
+| where IPCount > 1
+
+// Detects two signins from different IPs within a 15 minute window to the OfficeHome portal
+// https://www.microsoft.com/en-us/security/blog/2023/06/08/detecting-and-mitigating-a-multi-stage-aitm-phishing-and-bec-campaign/

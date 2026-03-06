@@ -1,0 +1,9 @@
+  SigninLogs
+  | where AppId == "9ba1a5c7-f17a-4de9-a1f1-6178c8d51223" and ResourceDisplayName == "Microsoft Graph" and ResultType == "0"    
+  | extend CAP = parse_json(ConditionalAccessPolicies)
+  | mv-expand CAP
+  | where (CAP.enforcedGrantControls has "RequireCompliantDevice" and CAP.result == "failure") or (CAP.enforcedGrantControls has "Block" and CAP.result == "notApplied")
+
+  // https://github.com/JumpsecLabs/TokenSmith
+  // https://labs.jumpsec.com/tokensmith-bypassing-intune-compliant-device-conditional-access/
+  // TokenSmith is a toolkit designed to bypass Intune compliant device conditional access. Investigate any signins and escalate as required.

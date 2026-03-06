@@ -1,0 +1,12 @@
+DeviceEvents
+  | where ActionType == "UserAccountCreated"
+  | where InitiatingProcessAccountName !contains DeviceName and InitiatingProcessAccountName !contains "$" // Local machine accounts
+  | project AccountCreatedTime = TimeGenerated, CreatedAccount = AccountName, CreatedAccountSid = AccountSid, DeviceId, DeviceName, AccountCreator = InitiatingProcessAccountName, CreatorAccountSid = InitiatingProcessAccountSid
+  | join (DeviceEvents
+  | extend GroupSid = tostring(AdditionalFields.GroupSid) | where GroupSid == "S-1-5-32-544"
+  | where ActionType == 'UserAccountAddedToLocalGroup'
+  | project AccountAddedTime = TimeGenerated, AccountSid, AddingAccount = InitiatingProcessAccountName, AddingAccountSid = InitiatingProcessAccountSid) on $left.CreatedAccountSid == $right.AccountSid
+  | project-away AccountSid
+
+// Description: Detects the creation of a new local user who is then added to the local administrators group as seen in attacks like below.
+// https://thedfirreport.com/2025/02/24/confluence-exploit-leads-to-lockbit-ransomware/
