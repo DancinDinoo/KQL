@@ -1,6 +1,5 @@
 let MaliciousUserAgents = externaldata(http_user_agent:string, metadata_description:string, metadata_tool:string, metadata_category:string, metadata_link:string, metadata_priority:string, metadata_fp_risk:string, metadata_severity:string, metadata_usage:string, ) [h@"https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_http_user_agents_list.csv"]
-with(format="csv", ignorefirstrecord = true) 
-| project UserAgent = http_user_agent;
+with(format="csv", ignorefirstrecord = true) ;
 let capturegroups = MaliciousUserAgents 
 | where UserAgent contains "*"
 | extend UserAgent = replace_string(UserAgent, "*", "")
