@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_http_user_agents_list.csvlet MaliciousUserAgents = externaldata(http_user_agent:string) [h@""]
+let MaliciousUserAgents = externaldata(http_user_agent:string) [h@"https://raw.githubusercontent.com/mthcht/awesome-lists/refs/heads/main/Lists/suspicious_http_user_agents_list.csv"]
 with(format="csv", ignorefirstrecord = true) // Community updated list of malicious user agents
 | project UserAgent = http_user_agent;
 let capturegroups = MaliciousUserAgents 
