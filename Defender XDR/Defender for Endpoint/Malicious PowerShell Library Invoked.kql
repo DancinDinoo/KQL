@@ -1,4 +1,4 @@
-let suspiciouscmdlets = pack_array("Invoke-Mimikatz", "Invoke-GraphRunner", "Invoke-RefreshGraphTokens", "Invoke-AzureHound", "Invoke-AzVMBulkCMD", "Invoke-AzVMCommandREST");
+let suspiciouscmdlets = pack_array("Invoke-Mimikatz", "Invoke-GraphRunner", "Invoke-RefreshGraphTokens", "Invoke-AzureHound", "Invoke-AzVMBulkCMD", "Invoke-AzVMCommandREST", "Invoke-Shellcode");
   (union isfuzzy=true
   (DeviceProcessEvents
   | where ProcessVersionInfoOriginalFileName =~ "PowerShell.EXE" or ProcessVersionInfoOriginalFileName == "pwsh.dll"
