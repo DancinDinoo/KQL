@@ -1,0 +1,13 @@
+MicrosoftGraphActivityLogs
+| where RequestMethod == "GET"
+| where RequestUri has_all ("https://graph.microsoft.com", "/users/", "/messages")
+| where ResponseStatusCode == "200"
+| extend Id = iff(isempty(UserId), ServicePrincipalId, UserId)
+| extend ObjectType = iff(isempty(UserId), "ServicePrincipal", "User")
+| extend MailboxTargetUPN = tostring(extract_all( @'https://graph.microsoft.com/v.../users/([^/]*)/', RequestUri)[0]) //Parses the AccountUPN
+| extend UserGuid= tostring(extract_all( @'*.(\b[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}\b-[0-9a-fA-F]{12}).*', RequestUri)[0]) //Parses the object-ID of an targeted identity
+| join kind=leftouter (IdentityInfo | summarize arg_max(TimeGenerated, *) by AccountObjectId | project TargetUPN=AccountUPN, AccountObjectId) on $left.UserGuid==$right.AccountObjectId
+| extend TargetUPN = coalesce(TargetUPN, MailboxTargetUPN)
+| summarize MinTime=min(TimeGenerated), MaxTime=max(TimeGenerated), MailBoxAccessCount=dcount(TargetUPN), Targets=make_set(TargetUPN) by AppId, ObjectType, Id // AppId is the App MS Graph is using to read the mail
+
+// Using Mail.ReadBasic.All (Application), Mail.Read (Delegated/Application) a TA can make API calls to read mail from a users mailbox.

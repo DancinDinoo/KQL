@@ -1,0 +1,13 @@
+MicrosoftGraphActivityLogs 
+| where ResponseStatusCode == "202"
+| where RequestUri endswith "/sendMail"
+| extend EmailSentFrom = tostring(parse_url(RequestUri).Path).substring(1).split("/")[-2]
+| extend Id = iff(isempty(UserId), ServicePrincipalId, UserId)
+| extend Type = iff(isempty(UserId), "ServicePrincipal", "User")
+| extend JoinKey = case(Type == "ServicePrincipal", EmailSentFrom, Type == "User", UserId, "")
+| join kind=leftouter (IdentityInfo | extend JoinKey = AccountObjectId | summarize arg_max(TimeGenerated, *) by JoinKey ) on  JoinKey
+| extend AccountUPN = coalesce(AccountUPN, EmailSentFrom)
+| summarize FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated), UserAgent = make_set(UserAgent), SendingApp = make_set(AppId), IPAddresses = make_set(IPAddress), NumberOfEmails = count() by tostring(EmailSentFrom)
+| project-reorder FirstSeen, LastSeen, EmailSentFrom, SendingApp, UserAgent, IPAddresses, NumberOfEmails
+
+// After compromising a User or Service Principal a TA can use this to send phishing emails to other members of the organisation if the Mail.Send (Delegated/Application) is present.

@@ -1,0 +1,7 @@
+  MicrosoftGraphActivityLogs
+  | where RequestMethod == "GET" 
+  | where ResponseStatusCode in ("302", "200")
+  | where RequestUri matches regex @"https://graph\.microsoft\.com/.*/items/.*/content" and RequestUri matches regex @"/drives?/.*" and RequestUri !has "/thumbnails/"
+  | summarize FirstTime = min(TimeGenerated), LastTime = max(TimeGenerated), UserAgents = make_set(UserAgent), RequestURIs = make_set(RequestUri), IPAddresses = make_set(IPAddress), ResponseCodes = make_set(ResponseStatusCode), Method = make_set(RequestMethod), NumberOfRequests = count() by AppId
+
+  // Using one of these permissions Files.ReadWrite (Delegated), Files.ReadWrite.All (Delegated/Application), Sites.ReadWrite.All (Delegated/Application) a TA can abuse this to access and download files from anyones OneDrive/Sharepoint without access. You cannot identify the file downloaded from this query but you can correlate against MCAS for further details on files.

@@ -1,0 +1,5 @@
+MicrosoftGraphActivityLogs
+| where UserAgent has "azurehound"
+| summarize EndpointsRequested = make_set(RequestUri), QueriesSent=count() by UserId, IPAddress, ServicePrincipalId, AppId, TokenIssuedAt, Location, SignInActivityId, SourceSystem, AadTenantId, UserAgent
+
+// Microsoft Graph queries with a user agent indicating the usage of AzureHound have been detected. Investigate whether this is part of routine security testing otherwise a TA may be conducting reconnaissance.

@@ -1,0 +1,8 @@
+MicrosoftGraphActivityLogs
+| where RequestUri has_all ("https://graph.microsoft.com/", "/directoryRoles/", "members/$ref")
+| where RequestMethod == "POST"
+| where ResponseStatusCode in ("204")
+| extend Role = tostring(split(RequestUri, "/")[-3]) // Role can be looked up in Auditlogs
+| project  TimeGenerated, IPAddress, RequestUri, ResponseStatusCode, Role, UserAgent, AppId
+
+// A compromised application with the privileges RoleManagement.ReadWrite.Directory (Delegated/Application) can be used to grant permissions like Global Administrator. Use the AuditLogs to get additional context and establish whether this is legitimate.

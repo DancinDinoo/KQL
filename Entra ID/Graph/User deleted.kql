@@ -1,0 +1,12 @@
+MicrosoftGraphActivityLogs
+| where RequestMethod == \"DELETE\"
+| where RequestUri matches regex @\"/users/[0-9a-fA-F-]{36}$\"
+| where ResponseStatusCode == \"204\"
+| extend DeletedUserID =  tostring(split(RequestUri, \"/\")[-1])
+| join kind=leftouter (
+IdentityInfo 
+| summarize arg_max(TimeGenerated, *) by AccountObjectId ) 
+on $left.DeletedUserID == $right.AccountObjectId
+| project-reorder  TimeGenerated, ResponseStatusCode, RequestMethod, IPAddress, UserAgent, RequestUri, AppId, AccountDisplayName, AccountUPN 
+
+// A TA abusing the User.ReadWrite.All (Delegated/Application) can use a compromised application to delete user accounts.

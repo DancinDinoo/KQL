@@ -1,0 +1,15 @@
+MicrosoftGraphActivityLogs
+| extend UUID = iff(isempty(UserId), ServicePrincipalId, UserId) // Values can exist in both
+| extend UserType = iff(isempty(UserId), "ServicePrincipal", "User")
+| extend StandardGraphEndpoint = replace_regex(RequestUri, @'/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/', @'/ID/')
+| extend StandardGraphEndpoint = replace_regex(StandardGraphEndpoint, @'/roleAssignments\?.*$', @'')
+| extend StandardGraphEndpoint = replace_regex(StandardGraphEndpoint, @'\?.*$', @'')
+| summarize TotalQueryNumber = count(), IPAddresses = make_set(IPAddress), UserAgents = make_set(UserAgent), FirstTime = min(TimeGenerated), LastTime = max(TimeGenerated), AllQueriedEndpoints = make_set(StandardGraphEndpoint) by UUID, UserType
+| project FirstTime, LastTime, IPAddresses, UserAgents, TotalQueryNumber, UUID, UserType, AllQueriedEndpoints, MatchingAzureHoundEndpoints = set_intersect(AllQueriedEndpoints, azurehoundendpoints) // How many of our azurehound endpoints 
+| extend NumberOfMatchingEndpoints = array_length(MatchingAzureHoundEndpoints) // Length of the array = how many exist
+| where NumberOfMatchingEndpoints > 10 or NumberOfMatchingEndpoints >= 6 and TotalQueryNumber >= 100 // There's 14 total for azurehound but this can always change
+| lookup IdentityInfo on $left.UUID == $right.AccountObjectId // Looking up account data for additional context
+| summarize arg_max(TimeGenerated, *) by UUID // Only the most recent record
+| project-away TimeGenerated
+
+// Detects when a number of graph endpoints that can be used for reconnaissance are queried together in a short period, or there is a spike in graph requests from a user or service principal.
